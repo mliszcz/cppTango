@@ -346,6 +346,7 @@ typedef struct event_callback_base
 	TangoMonitor					*callback_monitor;
 	vector<EventSubscribeStruct>	callback_list;
 	bool							alias_used;
+	DeviceProxy& get_device_proxy();
 } EventCallBackBase;
 
 typedef struct event_callback_zmq
