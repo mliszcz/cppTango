@@ -486,7 +486,7 @@ protected :
 	string 													obj_name_lower;
     int                                                     thread_id;
 
-	int add_new_callback(EvCbIte &,CallBack *,EventQueue *,int);
+	int add_new_callback(DeviceProxy*, EvCbIte &,CallBack *,EventQueue *,int);
 	void get_fire_sync_event(DeviceProxy *,CallBack *,EventQueue *,EventType,string &,const string &,EventCallBackStruct &,string &);
 
 	virtual void connect_event_channel(string &,Database *,bool,DeviceData &) = 0;
