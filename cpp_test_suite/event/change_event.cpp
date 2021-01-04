@@ -113,7 +113,7 @@ void EventUnsubCallBack::push_event(Tango::EventData* event_data)
 int main(int argc, char **argv)
 {
 	// TODO: FIXME: This test is temporarily disabled due to failures on single-core machines.
-	return 0;
+	/* return 0; */
 
 	DeviceProxy *device;
 

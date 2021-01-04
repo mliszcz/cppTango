@@ -104,7 +104,7 @@ abi-api-compliance-check:
     paths:
       - compat_reports
 
-llvm-latest:
+.llvm-latest:
   <<: *job-template
   variables:
     <<: *variables
@@ -114,7 +114,7 @@ llvm-latest:
     TANGO_USE_USING_NAMESPACE: "OFF"
     USE_PCH: "OFF"
 
-gcc-latest:
+.gcc-latest:
   <<: *job-template
   variables:
     <<: *variables
@@ -130,7 +130,7 @@ ubuntu-20.04:
     <<: *variables
     OS_TYPE: ubuntu-20.04
 
-debian10:
+.debian10:
   <<: *job-template
   variables:
     <<: *variables
@@ -164,7 +164,7 @@ debian10:
       - coverage.xml
       - coverage.tar.gz
 
-debian10-static:
+.debian10-static:
   <<: *job-template
   variables:
     <<: *variables
@@ -172,7 +172,7 @@ debian10-static:
     RUN_TESTS: "OFF"
     BUILD_SHARED_LIBS: "OFF"
 
-debian10-no-pch:
+.debian10-no-pch:
   <<: *job-template
   variables:
     <<: *variables
@@ -180,20 +180,20 @@ debian10-no-pch:
     USE_PCH: "OFF"
     RUN_TESTS: "OFF"
 
-debian10-release:
+.debian10-release:
   <<: *job-template
   variables:
     <<: *variables
     OS_TYPE: debian10
     CMAKE_BUILD_TYPE: Release
 
-debian9:
+.debian9:
   <<: *job-template
   variables:
     <<: *variables
     OS_TYPE: debian9
 
-debian8:
+.debian8:
   <<: *job-template
   variables:
     <<: *variables
