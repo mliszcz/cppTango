@@ -39,6 +39,7 @@
 #include <pollthread.tpp>
 
 #include <iomanip>
+#include <cstdlib>
 
 extern omni_thread::key_t key_py_data;
 namespace Tango
@@ -80,7 +81,13 @@ PollObjType PollThread::type_to_del = Tango::POLL_CMD;
 //------------------------------------------------------------------------------------------------------------------
 
 PollThread::PollThread(PollThCmd &cmd,TangoMonitor &m,bool heartbeat): shared_cmd(cmd),p_mon(m),
-					    sleep(std::chrono::milliseconds(1)),polling_stop(true),
+					    sleep(std::chrono::milliseconds(1)),
+					    time_stub_enabled([]
+					    {
+					        return std::getenv("TANGO_ENABLE_POLL_THREAD_TIME_STUB") != nullptr;
+					    }()),
+					    time_stub_current_time(PollClock::now()),
+					    polling_stop(true),
 					    attr_names(1),tune_ctr(1),
 					    need_two_tuning(false),send_heartbeat(heartbeat),heartbeat_ctr(0)
 {
@@ -136,7 +143,7 @@ void *PollThread::run_undetached(TANGO_UNUSED(void *ptr))
 		wo.name.push_back(std::string("Sub device property storage"));
 		wo.needed_time = PollClock::duration::zero();
 
-		now = PollClock::now();
+		now = get_current_time();
 		wo.wake_up_date = now;
 		insert_in_list(wo);
 	}
@@ -161,7 +168,7 @@ void *PollThread::run_undetached(TANGO_UNUSED(void *ptr))
 				per_thread_data_created = true;
 			}
 
-			now = PollClock::now();
+			now = get_current_time();
 
 			switch (received)
 			{
@@ -178,7 +185,7 @@ void *PollThread::run_undetached(TANGO_UNUSED(void *ptr))
 				break;
 			}
 
-			after = PollClock::now();
+			after = get_current_time();
 
 			if (tune_ctr <= 0)
 			{
@@ -252,11 +259,18 @@ PollCmdType PollThread::get_command()
 	if ((shared_cmd.cmd_pending == false) && (shared_cmd.trigger == false))
 	{
 		if (works.empty() == true)
-			p_mon.wait();
-		else
 		{
-			if (sleep.has_value())
-				p_mon.wait(std::chrono::duration_cast<std::chrono::milliseconds>(*sleep).count());
+			p_mon.wait();
+		}
+		else if (time_stub_enabled)
+		{
+			// Wait indefinitely even if work items are scheduled. The only
+			// way to proceed from here is to send POLL_MOVE_TIME command.
+			p_mon.wait();
+		}
+		else if (sleep.has_value())
+		{
+			p_mon.wait(std::chrono::duration_cast<std::chrono::milliseconds>(*sleep).count());
 		}
 	}
 
@@ -307,6 +321,33 @@ void PollThread::execute_cmd()
 
 	switch (local_cmd.cmd_code)
 	{
+//
+// Increase internal polling thread time
+//
+		case Tango::POLL_MOVE_TIME:
+		{
+			if (!time_stub_enabled)
+			{
+				break;
+			}
+
+			// Reset sleep time in case it was set by some previous event.
+			// We do not want to sleep because it can generate POLL_TIME_OUT
+			// events, which are not used with time stub.
+			sleep = tango_nullopt;
+
+			auto target_time = time_stub_current_time + local_cmd.new_upd;
+
+			while (!works.empty() && works.front().wake_up_date <= target_time)
+			{
+				time_stub_current_time = works.front().wake_up_date;
+				one_more_poll();
+			}
+
+			time_stub_current_time = target_time;
+
+			break;
+		}
 
 //
 // Add a new object
@@ -974,14 +1015,14 @@ void PollThread::print_list()
 
 				cout5 << "Dev name = " << ite->dev->get_name() << ", obj name = " << obj_list << ", next wake_up at "
 					<< std::fixed << duration_s(ite->wake_up_date.time_since_epoch()) << " s "
-					<< std::fixed << "(in " << duration_ms(ite->wake_up_date - PollClock::now()) << " ms)"
+					<< std::fixed << "(in " << duration_ms(ite->wake_up_date - get_current_time()) << " ms)"
 					<< std::endl;
 			}
 			else
 			{
 				cout5 << ite->name[0] << ", next wake_up at "
 					<< std::fixed << duration_s(ite->wake_up_date.time_since_epoch()) << " s "
-					<< std::fixed << "(in " << duration_ms(ite->wake_up_date - PollClock::now()) << " ms)"
+					<< std::fixed << "(in " << duration_ms(ite->wake_up_date - get_current_time()) << " ms)"
 					<< std::endl;
 			}
 		}
@@ -989,7 +1030,7 @@ void PollThread::print_list()
 		{
 			cout5 << "Event heartbeat, next wake_up at "
 			<< std::fixed << duration_s(ite->wake_up_date.time_since_epoch()) << " s "
-			<< std::fixed << "(in " << duration_ms(ite->wake_up_date - PollClock::now()) << " ms)"
+			<< std::fixed << "(in " << duration_ms(ite->wake_up_date - get_current_time()) << " ms)"
 			<< std::endl;
 		}
 
@@ -1424,7 +1465,7 @@ void PollThread::err_out_of_sync(WorkItem &to_do)
                     ad,
                     &except,
                     to_do.name[ctr],
-                    PollClock::now());
+                    get_current_time());
             if (event_supplier_zmq != NULL)
             {
                 if (event_supplier_nd != NULL)
@@ -1447,7 +1488,7 @@ void PollThread::err_out_of_sync(WorkItem &to_do)
                         ad,
                         &except,
                         to_do.name[ctr],
-                        PollClock::now());
+                        get_current_time());
             }
         }
 	}
@@ -1481,7 +1522,7 @@ void PollThread::poll_cmd(WorkItem &to_do)
 	std::vector<PollObj *>::iterator ite;
 	bool cmd_failed = false;
 
-	auto before_cmd = PollClock::now();
+	auto before_cmd = get_current_time();
 
 	try
 	{
@@ -1493,7 +1534,7 @@ void PollThread::poll_cmd(WorkItem &to_do)
 		save_except = new Tango::DevFailed(e);
 	}
 
-	auto after_cmd = PollClock::now();
+	auto after_cmd = get_current_time();
 	auto needed_time = after_cmd - before_cmd;
 	to_do.needed_time = needed_time;
 
@@ -1569,7 +1610,7 @@ void PollThread::poll_attr(WorkItem &to_do)
 		attr_names[ctr] = to_do.name[ctr].c_str();
 	}
 
-	auto before_cmd = PollClock::now();
+	auto before_cmd = get_current_time();
 
 	try
 	{
@@ -1588,7 +1629,7 @@ void PollThread::poll_attr(WorkItem &to_do)
 		save_except = new Tango::DevFailed(e);
 	}
 
-	auto after_cmd = PollClock::now();
+	auto after_cmd = get_current_time();
 	auto needed_time = after_cmd - before_cmd;
 	to_do.needed_time = needed_time;
 
@@ -1958,6 +1999,18 @@ void PollThread::auto_unsub()
 {
 	RootAttRegistry &rar = Util::instance()->get_root_att_reg();
 	rar.auto_unsub();
+}
+
+PollClock::time_point PollThread::get_current_time() const
+{
+	if (time_stub_enabled)
+	{
+		return time_stub_current_time;
+	}
+	else
+	{
+		return PollClock::now();
+	}
 }
 
 } // End of Tango namespace

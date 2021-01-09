@@ -2087,5 +2087,31 @@ void DServer::check_upd_authorized(DeviceImpl *dev,int upd,PollObjType obj_type,
 
 }
 
+void DServer::poll_thread_move_time(DevULong64 time_ms)
+{
+	cout4 << "Moving polling thread time " << time_ms << " ms forward"<< std::endl;
+
+	Tango::Util *tg = Tango::Util::instance();
+	for (auto &th_info : tg->get_polling_threads_info())
+	{
+		TangoMonitor &monitor = th_info->poll_mon;
+		PollThCmd &shared_cmd = th_info->shared_data;
+
+		omni_mutex_lock lock{monitor};
+
+		if (shared_cmd.cmd_pending == true)
+		{
+			monitor.wait();
+		}
+
+		shared_cmd = {};
+		shared_cmd.cmd_pending = true;
+		shared_cmd.cmd_code = POLL_MOVE_TIME;
+		shared_cmd.new_upd = std::chrono::milliseconds(time_ms);
+
+		monitor.signal();
+	}
+}
+
 } // End of Tango namespace
 

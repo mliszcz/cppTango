@@ -399,4 +399,32 @@ CORBA::Any *StartPollingCmd::execute(DeviceImpl *device, TANGO_UNUSED(const CORB
 	return ret;
 }
 
+PollThreadMoveTimeCmd::PollThreadMoveTimeCmd(
+	const char *name,
+	Tango::CmdArgType in,
+	Tango::CmdArgType out)
+:
+	Command(name, in, out)
+{
+}
+
+PollThreadMoveTimeCmd::~PollThreadMoveTimeCmd() = default;
+
+CORBA::Any *PollThreadMoveTimeCmd::execute(DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout4 << "PollThreadMoveTimeCmd::execute(): arrived " << std::endl;
+
+	DevULong64 tmp_data = 0u;
+	if ((in_any >>= tmp_data) == false)
+	{
+		Except::throw_exception(API_IncompatibleCmdArgumentType,
+			"Imcompatible command argument type, expected type is : DevULong64",
+			"PollThreadMoveTimeCmd::execute");
+	}
+
+	static_cast<DServer *>(device)->poll_thread_move_time(tmp_data);
+
+	return new CORBA::Any{};
+}
+
 } // End of Tango namespace

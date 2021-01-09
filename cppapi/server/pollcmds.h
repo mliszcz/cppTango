@@ -219,6 +219,25 @@ public:
 	virtual CORBA::Any *execute(DeviceImpl *device, const CORBA::Any &in_any);
 };
 
+//=============================================================================
+//
+//			The PollThreadMoveTimeCmd class
+//
+// description :	Class to implement the PollThreadMoveTime command.
+//			This command moves the polling thread time forward.
+//
+//=============================================================================
+//
+class PollThreadMoveTimeCmd : public Command
+{
+public:
+	PollThreadMoveTimeCmd(const char *cmd_name,
+		Tango::CmdArgType in,
+		Tango::CmdArgType out);
+	~PollThreadMoveTimeCmd();
+
+	CORBA::Any *execute(DeviceImpl *device, const CORBA::Any &in_any) override;
+};
 
 } // End of Tango namespace
 

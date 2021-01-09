@@ -139,6 +139,8 @@ public :
     bool is_polling_bef_9_def() {return polling_bef_9_def;}
     bool get_polling_bef_9() {return polling_bef_9;}
 
+	void poll_thread_move_time(DevULong64 time_ms);
+
 	friend class NotifdEventSupplier;
 	friend class ZmqEventSupplier;
 

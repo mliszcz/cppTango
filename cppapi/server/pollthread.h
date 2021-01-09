@@ -145,6 +145,11 @@ protected:
 	PollClock::time_point after;
 	tango_optional<PollClock::duration> sleep;
 
+	bool time_stub_enabled;
+	PollClock::time_point time_stub_current_time;
+
+	PollClock::time_point get_current_time() const;
+
 	bool				polling_stop;
 
 private:

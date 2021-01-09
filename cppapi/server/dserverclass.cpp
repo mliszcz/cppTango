@@ -1706,6 +1706,10 @@ void DServerClass::command_factory()
 						   Tango::DEV_VOID,
 						   Tango::DEV_VOID));
 
+	command_list.push_back(new PollThreadMoveTimeCmd("PollThreadMoveTime",
+						    Tango::DEV_ULONG64,
+						    Tango::DEV_VOID));
+
 #ifdef TANGO_HAS_LOG4TANGO
   	msg = "Str[i]=Device-name. Str[i+1]=Target-type::Target-name";
 

@@ -308,6 +308,13 @@ cout << "str = " << str << endl;
         constexpr auto time_buffer = 100ms;
         constexpr auto poll_period_ms = std::chrono::milliseconds(poll_period).count();
 
+        const auto move_time = [&](Tango::DevULong64 delay_ms)
+        {
+            DeviceData din{};
+            din << delay_ms;
+            dserver->command_inout("PollThreadMoveTime", din);
+        };
+
         std::string attribute_name = "PollLong_attr";
 
         auto config = device1->get_attribute_config(attribute_name);
@@ -327,7 +334,8 @@ cout << "str = " << str << endl;
             Tango::ARCHIVE_EVENT,
             &callback));
 
-        std::this_thread::sleep_for(poll_period + time_buffer);
+        move_time(poll_period_ms);
+        std::this_thread::sleep_for(time_buffer);
         TS_ASSERT_EQUALS(0, callback.num_of_error_events);
         TS_ASSERT_EQUALS(2, callback.num_of_all_events);
 
@@ -339,11 +347,13 @@ cout << "str = " << str << endl;
 
         TS_ASSERT_THROWS_NOTHING(device1->poll_attribute(attribute_name, poll_period_ms));
 
-        std::this_thread::sleep_for(poll_period + time_buffer);
+        move_time(poll_period_ms);
+        std::this_thread::sleep_for(time_buffer);
         TS_ASSERT_EQUALS(1, callback.num_of_error_events);
         TS_ASSERT_EQUALS(4, callback.num_of_all_events);
 
-        std::this_thread::sleep_for(poll_period);
+        move_time(poll_period_ms);
+        std::this_thread::sleep_for(time_buffer);
         TS_ASSERT_EQUALS(1, callback.num_of_error_events);
         TS_ASSERT_EQUALS(5, callback.num_of_all_events);
 
