@@ -118,7 +118,7 @@ public:
 
 // Test State and Status commands
 
-	void test_State_and_Status_commands(void)
+	void DIS_test_State_and_Status_commands(void)
 	{
 		DeviceData dout;
 		DevState state;
@@ -135,7 +135,7 @@ public:
 
 // Test DevRestart command on the dserver device
 
-	void test_DevRestart_command_on_the_dserver_device(void)
+	void DIS_test_DevRestart_command_on_the_dserver_device(void)
 	{
 		DeviceData din, dout;
 		DevState state_in, state_out;
@@ -158,7 +158,7 @@ public:
 
 // Test DevRestart command on classical device
 
-	void test_DevRestart_command_on_classical_device(void)
+	void DIS_test_DevRestart_command_on_classical_device(void)
 	{
 		DeviceData din, dout;
 		DevState state_in, state_out;
@@ -189,7 +189,7 @@ public:
 
 // Test name, description, state ans status CORBA attributes
 
-	void test_name_description_state_ans_status_CORBA_attributes(void)
+	void DIS_test_name_description_state_ans_status_CORBA_attributes(void)
 	{
 		DeviceData dout;
 		DevState state_out;
@@ -211,14 +211,14 @@ cout << "str = " << str << endl;
 
 // Ping the device
 
-	void test_ping_the_device(void)
+	void DIS_test_ping_the_device(void)
 	{
 		TS_ASSERT_THROWS_NOTHING(dserver->ping());
 	}
 
 // Test info call
 
-	void test_info_call(void)
+	void DIS_test_info_call(void)
 	{
 		TS_ASSERT(dserver->info().dev_class == "DServer");
 		// TODO: uncomment the following if needed
@@ -232,7 +232,7 @@ cout << "str = " << str << endl;
     /* Tests that subscriber can receive events immediately after
      * a device restart without a need to wait for re-subscription.
      */
-    void test_event_subscription_recovery_after_device_restart()
+    void DIS_test_event_subscription_recovery_after_device_restart()
     {
         EventCallback<Tango::EventData> callback{};
 
@@ -266,7 +266,7 @@ cout << "str = " << str << endl;
     /* Tests that attribute configuration change event
      * is sent to all subscribers after device restart.
      */
-    void test_attr_conf_change_event_after_device_restart()
+    void DIS_test_attr_conf_change_event_after_device_restart()
     {
         EventCallback<Tango::AttrConfEventData> callback{};
 
@@ -354,7 +354,7 @@ cout << "str = " << str << endl;
      * and one of them is deleted, only subscriptions made with that proxy are
      * cancelled.
      */
-    void test_unsubscription_during_deletion_of_multiple_proxies()
+    void DIS_test_unsubscription_during_deletion_of_multiple_proxies()
     {
         EventCallback<Tango::EventData> callback1{};
         EventCallback<Tango::EventData> callback2{};
@@ -399,7 +399,7 @@ cout << "str = " << str << endl;
         TS_ASSERT_EQUALS(0, callback2.num_of_error_events);
     }
 
-    void test_unsubscription_multiple_subscriptions_with_single_proxy()
+    void DIS_test_unsubscription_multiple_subscriptions_with_single_proxy()
     {
         EventCallback<Tango::EventData> callback1{};
         EventCallback<Tango::EventData> callback2{};
